@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Read-Along Cast, Emotion &amp; SFX Studio</title>
+  <style>
+    :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --muted:#94a3b8; --border:#334155; --accent:#38bdf8; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text); }
+    header { position:sticky; top:0; z-index:20; background:var(--card); border-bottom:1px solid var(--border); padding:0.85rem 1.25rem; display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; justify-content:space-between; }
+    .controls { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; }
+    select, input, button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:0.4rem 0.65rem; font-size:0.85rem; }
+    button.primary { background:var(--accent); color:#0f172a; font-weight:600; border-color:var(--accent); cursor:pointer; }
+    main { max-width:1100px; margin:1.25rem auto; padding:0 1rem 4rem; }
+    .seg { background:var(--card); border:1px solid var(--border); border-left:5px solid #64748b; border-radius:10px; padding:0.85rem 1rem; margin-bottom:0.75rem; }
+    .seg.low { border-left-color:#f59e0b; }
+    .seg.role-narrator { border-left-color:#94a3b8; }
+    .seg.role-scrooge, .seg.role-queen { border-left-color:#ef4444; }
+    .seg.role-alice, .seg.role-tim { border-left-color:#38bdf8; }
+    .seg.role-marley, .seg.role-spirit { border-left-color:#a855f7; }
+    .seg-top { display:flex; flex-wrap:wrap; gap:0.5rem; align-items:center; margin-bottom:0.5rem; font-size:0.82rem; color:var(--muted); }
+    .seg-text { font-family:Georgia,serif; font-size:1.05rem; line-height:1.55; }
+    .badge { padding:0.15rem 0.45rem; border-radius:6px; font-size:0.75rem; font-weight:600; background:#334155; color:#f8fafc; }
+    .badge.low { background:#78350f; color:#fde68a; }
+  </style>
+</head>
+<body>
+  <header>
+    <div><strong id="bookTitle">Cast, Emotion &amp; SFX Studio</strong> <span id="stats" style="color:var(--muted);font-size:0.85rem;margin-left:0.5rem;"></span></div>
+    <div class="controls">
+      <select id="chFilter"></select>
+      <select id="confFilter">
+        <option value="all">All Segments</option>
+        <option value="low">Needs Audit (Low Confidence)</option>
+        <option value="dialogue">Dialogue Only</option>
+      </select>
+      <button id="exportBtn" class="primary">Export cast_script.json</button>
+    </div>
+  </header>
+  <main id="list"></main>
+  <script>
+    let scriptData = null;
+    const ROLES = ['narrator','scrooge','cratchit','fred','marley','spirit','tim','alice','rabbit','hatter','cheshire','caterpillar','queen','king','turtle','gryphon','other'];
+    const EMOTIONS = ['neutral','cheerful','sad','angry','spooky','whisper','hurried','solemn'];
+    const AMBIANCES = ['none','cozy_fireplace','winter_wind','spooky_manor','clock_ticking','festive_bells'];
+    const SFXS = ['none','chains_rattle','door_creak','bell_chime','footsteps','thunder','tea_clink'];
+
+    function render() {
+      const chIdx = document.getElementById('chFilter').value;
+      const cf = document.getElementById('confFilter').value;
+      const list = document.getElementById('list');
+      list.innerHTML = '';
+      const ch = scriptData.chapters[Number(chIdx)];
+      ch.segments.forEach((s, i) => {
+        if (cf === 'low' && s.confidence !== 'low') return;
+        if (cf === 'dialogue' && s.role === 'narrator') return;
+        const div = document.createElement('div');
+        div.className = `seg role-${s.role} ${s.confidence === 'low' ? 'low' : ''}`;
+        div.innerHTML = `
+          <div class="seg-top">
+            <span class="badge ${s.confidence === 'low' ? 'low' : ''}">#${i+1} · ${s.confidence === 'low' ? 'Audit?' : 'Auto'}</span>
+            <label>Speaker: <select data-k="role">${ROLES.map(r=>`<option ${r===s.role?'selected':''}>${r}</option>`).join('')}</select></label>
+            <label>Emotion: <select data-k="emotion">${EMOTIONS.map(e=>`<option ${e===s.emotion?'selected':''}>${e}</option>`).join('')}</select></label>
+            <label>Ambiance: <select data-k="ambiance">${AMBIANCES.map(a=>`<option ${a===s.ambiance?'selected':''}>${a}</option>`).join('')}</select></label>
+            <label>SFX: <select data-k="sfx">${SFXS.map(x=>`<option ${x===s.sfx?'selected':''}>${x}</option>`).join('')}</select></label>
+          </div>
+          <div class="seg-text">${s.text.replace(/</g,'&lt;')}</div>
+        `;
+        div.querySelectorAll('select').forEach(sel => {
+          sel.onchange = () => { s[sel.dataset.k] = sel.value; if (sel.dataset.k === 'role') s.confidence = 'manual'; };
+        });
+        list.appendChild(div);
+      });
+    }
+
+    document.getElementById('exportBtn').onclick = () => {
+      const blob = new Blob([JSON.stringify(scriptData, null, 2)], {type:'application/json'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'cast_script.json';
+      a.click();
+    };
+
+    fetch('cast_script.json').then(r => r.json()).then(d => {
+      scriptData = d;
+      document.getElementById('bookTitle').textContent = `${d.title} — Cast & SFX Studio`;
+      const total = d.chapters.reduce((a, c) => a + c.segments.length, 0);
+      const low = d.chapters.reduce((a, c) => a + c.segments.filter(s => s.confidence === 'low').length, 0);
+      document.getElementById('stats').textContent = `${total} segments (${low} flagged for audit)`;
+      const chFilter = document.getElementById('chFilter');
+      d.chapters.forEach((c, i) => {
+        const o = document.createElement('option'); o.value = i; o.textContent = c.title; chFilter.appendChild(o);
+      });
+      chFilter.onchange = render;
+      document.getElementById('confFilter').onchange = render;
+      render();
+    });
+  </script>
+</body>
+</html>
