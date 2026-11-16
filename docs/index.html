@@ -29,8 +29,9 @@
       border-radius:8px; padding:0.4rem 0.7rem; font-size:0.86rem; cursor:pointer;
     }
     button.primary { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
-    .layout { display:flex; max-width:1280px; margin:1.25rem auto; gap:1.25rem; padding:0 1rem 4rem; align-items:flex-start; }
-    .book-col { flex:1; min-width:0; }
+    .layout { max-width:1280px; margin:1.25rem auto; padding:0 1.25rem 4rem; }
+    .book-col { max-width:820px; margin:0 auto; transition:margin-right 0.15s; }
+    body.inspector-open .book-col { margin-left:0; margin-right:370px; max-width:840px; }
     .book-page {
       background:var(--panel); border:1px solid var(--border); border-radius:14px;
       padding:2.5rem 2.75rem; font-family:Georgia,serif; font-size:1.2rem; line-height:1.75;
@@ -44,20 +45,27 @@
     .w { border-radius:3px; }
     .w.active-word { background:var(--word-hl); color:var(--word-txt); padding:0 2px; }
     .inspector {
-      width:340px; position:sticky; top:4.5rem; background:var(--panel); border:1px solid var(--border);
-      border-radius:14px; padding:1.1rem; font-size:0.88rem; display:none;
+      width:345px; position:fixed; top:4.5rem; right:1.25rem; z-index:25;
+      max-height:calc(100vh - 5.5rem); overflow-y:auto;
+      background:var(--panel); border:1px solid var(--border);
+      border-radius:14px; padding:1.1rem; font-size:0.86rem; display:none;
+      box-shadow:0 12px 32px rgba(0,0,0,0.16);
     }
     .inspector.open { display:block; }
-    .inspector h3 { margin:0 0 0.75rem; font-size:1rem; display:flex; justify-content:space-between; align-items:center; }
-    .field { margin-bottom:0.65rem; }
-    .field label { display:block; font-size:0.76rem; color:var(--muted); margin-bottom:0.2rem; font-weight:600; text-transform:uppercase; }
-    .field select, .field input { width:100%; }
-    .seg-preview { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.6rem; font-family:Georgia,serif; font-size:0.9rem; margin-bottom:0.75rem; max-height:110px; overflow:auto; }
+    .inspector h3 { margin:0 0 0.65rem; font-size:0.98rem; display:flex; justify-content:space-between; align-items:center; }
+    .field { margin-bottom:0.6rem; }
+    .field label { display:flex; justify-content:space-between; font-size:0.74rem; color:var(--muted); margin-bottom:0.2rem; font-weight:600; text-transform:uppercase; }
+    .field select, .field input[type="range"] { width:100%; }
+    .field input[type="range"] { padding:0; accent-color:var(--accent); cursor:pointer; }
+    .seg-preview { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:0.55rem; font-family:Georgia,serif; font-size:0.9rem; margin-bottom:0.7rem; max-height:95px; overflow:auto; }
     .row2 { display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; }
-    @media (max-width:900px) { .layout { flex-direction:column; } .inspector { width:100%; position:static; } }
+    @media (max-width:960px) {
+      body.inspector-open .book-col { margin:0 auto; }
+      .inspector { width:calc(100% - 2rem); left:1rem; right:1rem; top:auto; bottom:0.75rem; max-height:52vh; }
+    }
   </style>
 </head>
-<body>
+<body class="inspector-open">
   <header>
     <div><strong id="bookTitle">Read-Along Book Reader</strong></div>
     <div class="controls">
@@ -75,51 +83,57 @@
     <div class="book-col">
       <article id="reader" class="book-page"></article>
     </div>
-    <aside id="inspector" class="inspector open">
-      <h3><span>Live Segment Inspector</span><span id="segBadge" style="font-size:0.78rem;color:var(--muted);">#1</span></h3>
-      <div id="segTextPreview" class="seg-preview">Click or play any sentence to inspect and adjust its voice, emotion, ambiance, or SFX.</div>
-      <div class="row2">
-        <div class="field">
-          <label>Speaker / Role</label>
-          <select id="fRole">
-            <option>narrator</option><option>scrooge</option><option>cratchit</option><option>fred</option>
-            <option>marley</option><option>spirit</option><option>tim</option><option>alice</option>
-            <option>rabbit</option><option>hatter</option><option>cheshire</option><option>caterpillar</option>
-            <option>queen</option><option>king</option><option>turtle</option><option>gryphon</option><option>other</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Emotion Preset</label>
-          <select id="fEmotion">
-            <option>neutral</option><option>cheerful</option><option>sad</option><option>angry</option>
-            <option>spooky</option><option>whisper</option><option>hurried</option><option>solemn</option>
-          </select>
-        </div>
-      </div>
+  </div>
+  <aside id="inspector" class="inspector open">
+    <h3><span>Floating Cast &amp; FX</span><span id="segBadge" style="font-size:0.76rem;color:var(--muted);">#1</span></h3>
+    <div id="segTextPreview" class="seg-preview">Click any sentence to select and edit without auto-playing.</div>
+    <div class="row2">
       <div class="field">
-        <label>Neural Voice</label>
-        <select id="fVoice">
-          <option>en-GB-SoniaNeural</option><option>en-GB-MaisieNeural</option><option>en-GB-ThomasNeural</option>
-          <option>en-GB-RyanNeural</option><option>en-GB-LibbyNeural</option><option>en-US-AndrewMultilingualNeural</option>
-          <option>en-US-AvaMultilingualNeural</option><option>en-US-AriaNeural</option><option>en-US-ChristopherNeural</option>
-          <option>en-US-GuyNeural</option><option>en-US-RogerNeural</option><option>en-US-BrianNeural</option>
-          <option>en-US-AnaNeural</option><option>en-US-EricNeural</option>
-          <option>en-AU-NatashaNeural</option><option>en-AU-WilliamMultilingualNeural</option>
+        <label>Speaker / Role</label>
+        <select id="fRole">
+          <option>narrator</option><option>scrooge</option><option>cratchit</option><option>fred</option>
+          <option>marley</option><option>spirit</option><option>tim</option><option>alice</option>
+          <option>rabbit</option><option>hatter</option><option>cheshire</option><option>caterpillar</option>
+          <option>queen</option><option>king</option><option>turtle</option><option>gryphon</option><option>other</option>
         </select>
       </div>
-      <div class="row2">
-        <div class="field"><label>Rate</label><input id="fRate" type="text" value="+0%"/></div>
-        <div class="field"><label>Pitch</label><input id="fPitch" type="text" value="+0Hz"/></div>
+      <div class="field">
+        <label>Emotion Preset</label>
+        <select id="fEmotion">
+          <option>neutral</option><option>cheerful</option><option>sad</option><option>angry</option>
+          <option>spooky</option><option>whisper</option><option>hurried</option><option>solemn</option>
+        </select>
       </div>
-      <div class="row2">
-        <div class="field"><label>Volume</label><input id="fVolume" type="text" value="+0%"/></div>
-        <div class="field">
-          <label>Ambiance</label>
-          <select id="fAmbiance">
-            <option>none</option><option>cozy_fireplace</option><option>winter_wind</option>
-            <option>spooky_manor</option><option>clock_ticking</option><option>festive_bells</option>
-          </select>
-        </div>
+    </div>
+    <div class="field">
+      <label>Neural Voice</label>
+      <select id="fVoice">
+        <option>en-US-AriaNeural</option><option>en-US-AvaMultilingualNeural</option><option>en-US-AndrewMultilingualNeural</option>
+        <option>en-US-BrianMultilingualNeural</option><option>en-US-GuyNeural</option><option>en-US-ChristopherNeural</option>
+        <option>en-US-JennyNeural</option><option>en-US-RogerNeural</option><option>en-US-AnaNeural</option><option>en-US-EricNeural</option>
+        <option>en-GB-SoniaNeural</option><option>en-GB-MaisieNeural</option><option>en-GB-ThomasNeural</option>
+        <option>en-GB-RyanNeural</option><option>en-GB-LibbyNeural</option><option>en-AU-NatashaNeural</option><option>en-AU-WilliamMultilingualNeural</option>
+      </select>
+    </div>
+    <div class="field">
+      <label><span>Rate</span><span id="fRateVal">+0%</span></label>
+      <input id="fRate" type="range" min="-50" max="100" step="2" value="0"/>
+    </div>
+    <div class="field">
+      <label><span>Pitch</span><span id="fPitchVal">+0Hz</span></label>
+      <input id="fPitch" type="range" min="-50" max="50" step="1" value="0"/>
+    </div>
+    <div class="field">
+      <label><span>Volume</span><span id="fVolumeVal">+0%</span></label>
+      <input id="fVolume" type="range" min="-50" max="50" step="2" value="0"/>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Ambiance</label>
+        <select id="fAmbiance">
+          <option>none</option><option>cozy_fireplace</option><option>winter_wind</option>
+          <option>spooky_manor</option><option>clock_ticking</option><option>festive_bells</option>
+        </select>
       </div>
       <div class="field">
         <label>Spot SFX</label>
@@ -128,11 +142,12 @@
           <option>bell_chime</option><option>door_creak</option><option>footsteps</option><option>thunder</option>
         </select>
       </div>
-      <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-        <button id="exportBtn" class="primary" style="flex:1;">Export Edited Script</button>
-      </div>
-    </aside>
-  </div>
+    </div>
+    <div style="display:flex;gap:0.5rem;margin-top:0.65rem;">
+      <button id="auditionBtn" style="flex:1;">&#9654; Play Segment</button>
+      <button id="exportBtn" class="primary" style="flex:1;">Export JSON</button>
+    </div>
+  </aside>
   <audio id="audioEl"></audio>
 
   <script>
@@ -146,11 +161,15 @@
       hurried:{rate:'+14%',pitch:'+3Hz',volume:'+2%'},
       solemn:{rate:'-8%',pitch:'-5Hz',volume:'+0%'}
     };
-    let bookData = null, curCh = 0, words = [], segs = [], activeWord = -1, activeSeg = -1;
+    let bookData = null, curCh = 0, words = [], segs = [], activeWord = -1, activeSeg = -1, stopAtSec = null;
     const audioEl = document.getElementById('audioEl');
     const playBtn = document.getElementById('playBtn');
     const reader = document.getElementById('reader');
     const inspector = document.getElementById('inspector');
+
+    const parseNum = (v) => parseInt(String(v || '0').replace(/[^0-9-]/g, ''), 10) || 0;
+    const fmtPct = (n) => (n >= 0 ? `+${n}%` : `${n}%`);
+    const fmtHz = (n) => (n >= 0 ? `+${n}Hz` : `${n}Hz`);
 
     function populateInspector(si) {
       const s = segs[si];
@@ -160,9 +179,10 @@
       document.getElementById('fRole').value = s.role;
       document.getElementById('fEmotion').value = s.emotion;
       document.getElementById('fVoice').value = s.voice;
-      document.getElementById('fRate').value = s.rate;
-      document.getElementById('fPitch').value = s.pitch;
-      document.getElementById('fVolume').value = s.volume;
+      const r = parseNum(s.rate), p = parseNum(s.pitch), v = parseNum(s.volume);
+      document.getElementById('fRate').value = r; document.getElementById('fRateVal').textContent = fmtPct(r);
+      document.getElementById('fPitch').value = p; document.getElementById('fPitchVal').textContent = fmtHz(p);
+      document.getElementById('fVolume').value = v; document.getElementById('fVolumeVal').textContent = fmtPct(v);
       document.getElementById('fAmbiance').value = s.ambiance;
       document.getElementById('fSfx').value = s.sfx;
     }
@@ -182,30 +202,30 @@
     }
 
     function loadChapter(idx) {
-      audioEl.pause(); playBtn.textContent = 'Play';
+      audioEl.pause(); stopAtSec = null; playBtn.textContent = 'Play';
       curCh = idx;
       const ch = bookData.chapters[idx];
       reader.innerHTML = ch.html;
       audioEl.src = ch.audio;
       segs = ch.segments.map((s, i) => ({...s, el: document.getElementById(`seg_${i}`)}));
       words = ch.words.map(w => ({...w, el: document.getElementById(w.id)})).filter(w => w.el);
+
+      // Clicking a word or sentence selects it for editing & seeks without forcing auto-play
       words.forEach((w, i) => {
         w.el.classList.add('w');
         w.el.onclick = (e) => {
           e.stopPropagation();
+          stopAtSec = null;
           setActive(i, w.segIdx, false);
           audioEl.currentTime = w.beginSec;
-          audioEl.play();
-          playBtn.textContent = 'Pause';
         };
       });
       segs.forEach((s, si) => {
         if (!s.el) return;
         s.el.onclick = () => {
+          stopAtSec = null;
           setActive(-1, si, false);
           audioEl.currentTime = s.beginSec;
-          audioEl.play();
-          playBtn.textContent = 'Pause';
         };
       });
       setActive(0, 0, false);
@@ -213,6 +233,10 @@
 
     audioEl.addEventListener('timeupdate', () => {
       const t = audioEl.currentTime;
+      if (stopAtSec !== null && t >= stopAtSec) {
+        audioEl.pause(); stopAtSec = null; playBtn.textContent = 'Play';
+        return;
+      }
       let lo = 0, hi = words.length - 1, fw = -1;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
@@ -222,16 +246,29 @@
     });
 
     playBtn.onclick = () => {
+      stopAtSec = null;
       if (audioEl.paused) { audioEl.play(); playBtn.textContent = 'Pause'; }
       else { audioEl.pause(); playBtn.textContent = 'Play'; }
     };
-    document.getElementById('toggleEditBtn').onclick = () => inspector.classList.toggle('open');
+    document.getElementById('auditionBtn').onclick = () => {
+      if (activeSeg < 0 || !segs[activeSeg]) return;
+      const s = segs[activeSeg];
+      audioEl.currentTime = s.beginSec;
+      stopAtSec = s.endSec;
+      audioEl.play();
+      playBtn.textContent = 'Pause';
+    };
+    document.getElementById('toggleEditBtn').onclick = () => {
+      const open = inspector.classList.toggle('open');
+      document.body.classList.toggle('inspector-open', open);
+    };
     document.getElementById('themeSelect').onchange = (e) => {
-      document.body.className = e.target.value === 'light' ? '' : e.target.value;
+      const th = e.target.value === 'light' ? '' : e.target.value;
+      document.body.className = (inspector.classList.contains('open') ? 'inspector-open ' : '') + th;
     };
     document.getElementById('chapterSelect').onchange = (e) => loadChapter(Number(e.target.value));
 
-    ['fRole','fVoice','fRate','fPitch','fVolume','fAmbiance','fSfx'].forEach(id => {
+    ['fRole','fVoice','fAmbiance','fSfx'].forEach(id => {
       document.getElementById(id).onchange = (e) => {
         if (activeSeg < 0 || !segs[activeSeg]) return;
         const key = id.replace('f','').toLowerCase();
@@ -240,6 +277,21 @@
         bookData.chapters[curCh].segments[activeSeg][key] = e.target.value;
       };
     });
+    document.getElementById('fRate').oninput = (e) => {
+      const val = fmtPct(Number(e.target.value));
+      document.getElementById('fRateVal').textContent = val;
+      if (activeSeg >= 0 && segs[activeSeg]) { segs[activeSeg].rate = val; bookData.chapters[curCh].segments[activeSeg].rate = val; }
+    };
+    document.getElementById('fPitch').oninput = (e) => {
+      const val = fmtHz(Number(e.target.value));
+      document.getElementById('fPitchVal').textContent = val;
+      if (activeSeg >= 0 && segs[activeSeg]) { segs[activeSeg].pitch = val; bookData.chapters[curCh].segments[activeSeg].pitch = val; }
+    };
+    document.getElementById('fVolume').oninput = (e) => {
+      const val = fmtPct(Number(e.target.value));
+      document.getElementById('fVolumeVal').textContent = val;
+      if (activeSeg >= 0 && segs[activeSeg]) { segs[activeSeg].volume = val; bookData.chapters[curCh].segments[activeSeg].volume = val; }
+    };
     document.getElementById('fEmotion').onchange = (e) => {
       if (activeSeg < 0 || !segs[activeSeg]) return;
       const emo = e.target.value, p = EMO_PRESETS[emo];
